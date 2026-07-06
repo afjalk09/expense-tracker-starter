@@ -1,16 +1,24 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts'
 import './App.css'
 
 function App() {
-  const [transactions, setTransactions] = useState([
-    { id: 1, description: "Salary", amount: "5000", type: "income", category: "salary", date: "2025-01-01" },
-    { id: 2, description: "Rent", amount: "1200", type: "expense", category: "housing", date: "2025-01-02" },
-    { id: 3, description: "Groceries", amount: "150", type: "expense", category: "food", date: "2025-01-03" },
-    { id: 4, description: "Freelance Work", amount: "800", type: "expense", category: "salary", date: "2025-01-05" },
-    { id: 5, description: "Electric Bill", amount: "95", type: "expense", category: "utilities", date: "2025-01-06" },
-    { id: 6, description: "Dinner Out", amount: "65", type: "expense", category: "food", date: "2025-01-07" },
-    { id: 7, description: "Gas", amount: "45", type: "expense", category: "transport", date: "2025-01-08" },
-    { id: 8, description: "Netflix", amount: "15", type: "expense", category: "entertainment", date: "2025-01-10" },
+const [transactions, setTransactions] = useState([
+    { id: 1, description: "Salary", amount: 5000, type: "income", category: "salary", date: "2025-01-01" },
+    { id: 2, description: "Rent", amount: 1200, type: "expense", category: "housing", date: "2025-01-02" },
+    { id: 3, description: "Groceries", amount: 150, type: "expense", category: "food", date: "2025-01-03" },
+    { id: 4, description: "Freelance Work", amount: 800, type: "income", category: "salary", date: "2025-01-05" },
+    { id: 5, description: "Electric Bill", amount: 95, type: "expense", category: "utilities", date: "2025-01-06" },
+    { id: 6, description: "Dinner Out", amount: 65, type: "expense", category: "food", date: "2025-01-07" },
+    { id: 7, description: "Gas", amount: 45, type: "expense", category: "transport", date: "2025-01-08" },
+    { id: 8, description: "Netflix", amount: 15, type: "expense", category: "entertainment", date: "2025-01-10" },
   ]);
 
   const [description, setDescription] = useState("");
@@ -22,13 +30,22 @@ function App() {
 
   const categories = ["food", "housing", "utilities", "transport", "entertainment", "salary", "other"];
 
+  const spendingByCategory = useMemo(() => {
+    const expenses = transactions.filter(t => t.type === "expense");
+    const totals = {};
+    expenses.forEach(t => {
+      totals[t.category] = (totals[t.category] || 0) + t.amount;
+    });
+    return Object.entries(totals).map(([name, value]) => ({ name, value }));
+  }, [transactions]);
+
+  const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#0088FE", "#00C49F", "#FFBB28"];
+
   const totalIncome = transactions
     .filter(t => t.type === "income")
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpenses = transactions
-    .filter(t => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = spendingByCategory.reduce((sum, c) => sum + c.value, 0);
 
   const balance = totalIncome - totalExpenses;
 
@@ -79,6 +96,30 @@ function App() {
           <h3>Balance</h3>
           <p className="balance-amount">${balance}</p>
         </div>
+      </div>
+
+      <div className="chart">
+        <h2>Spending by Category</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={spendingByCategory}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={100}
+              fill="#8884d8"
+              dataKey="value"
+              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+            >
+              {spendingByCategory.map((_, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip formatter={value => [`$${value}`]} />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
       </div>
 
       <div className="add-transaction">
