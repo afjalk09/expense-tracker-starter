@@ -65,6 +65,7 @@ form {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: flex-start;
 }
 
 form input,
@@ -72,6 +73,30 @@ form select {
   padding: 8px;
   border: 1px solid #ccc;
   font-size: 14px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 120px;
+}
+
+.field-group input,
+.field-group select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input-error {
+  border-color: #e74c3c !important;
+  background-color: #fff5f5;
+}
+
+.warning {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 form input[type="text"] {

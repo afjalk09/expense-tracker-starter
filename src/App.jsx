@@ -25,6 +25,7 @@ const [transactions, setTransactions] = useState([
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("expense");
   const [category, setCategory] = useState("food");
+  const [errors, setErrors] = useState({});
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
 
@@ -59,12 +60,21 @@ const [transactions, setTransactions] = useState([
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!description || !amount) return;
+    const newErrors = {};
+    if (!description.trim()) newErrors.description = "Description is required";
+    if (!amount || Number(amount) <= 0) newErrors.amount = "Valid amount is required";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
 
     const newTransaction = {
       id: Date.now(),
       description,
-      amount,
+      amount: Number(amount),
       type,
       category,
       date: new Date().toISOString().split('T')[0],
@@ -75,6 +85,12 @@ const [transactions, setTransactions] = useState([
     setAmount("");
     setType("expense");
     setCategory("food");
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm("Are you sure you want to delete this transaction?")) {
+      setTransactions(transactions.filter(t => t.id !== id));
+    }
   };
 
 
@@ -125,18 +141,26 @@ const [transactions, setTransactions] = useState([
       <div className="add-transaction">
         <h2>Add Transaction</h2>
         <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <input
-            type="number"
-            placeholder="Amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
+          <div className="field-group">
+            <input
+              type="text"
+              placeholder="Description"
+              value={description}
+              onChange={(e) => { setDescription(e.target.value); setErrors(prev => ({ ...prev, description: undefined })); }}
+              className={errors.description ? "input-error" : ""}
+            />
+            {errors.description && <span className="warning">⚠ {errors.description}</span>}
+          </div>
+          <div className="field-group">
+            <input
+              type="number"
+              placeholder="Amount"
+              value={amount}
+              onChange={(e) => { setAmount(e.target.value); setErrors(prev => ({ ...prev, amount: undefined })); }}
+              className={errors.amount ? "input-error" : ""}
+            />
+            {errors.amount && <span className="warning">⚠ {errors.amount}</span>}
+          </div>
           <select value={type} onChange={(e) => setType(e.target.value)}>
             <option value="income">Income</option>
             <option value="expense">Expense</option>
@@ -173,7 +197,7 @@ const [transactions, setTransactions] = useState([
               <th>Description</th>
               <th>Category</th>
               <th>Amount</th>
-
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -182,10 +206,12 @@ const [transactions, setTransactions] = useState([
                 <td>{t.date}</td>
                 <td>{t.description}</td>
                 <td>{t.category}</td>
-                <td className={t.type === "income" ? "income-amount" : "expense-amount"}>
+                  <td className={t.type === "income" ? "income-amount" : "expense-amount"}>
                   {t.type === "income" ? "+" : "-"}${t.amount}
                 </td>
-
+                <td>
+                  <button className="delete-btn" onClick={() => handleDelete(t.id)}>Delete</button>
+                </td>
               </tr>
             ))}
           </tbody>
