@@ -10,7 +10,7 @@ import {
 import './App.css'
 
 function App() {
-const [transactions, setTransactions] = useState([
+  const [transactions, setTransactions] = useState([
     { id: 1, description: "Salary", amount: 5000, type: "income", category: "salary", date: "2025-01-01" },
     { id: 2, description: "Rent", amount: 1200, type: "expense", category: "housing", date: "2025-01-02" },
     { id: 3, description: "Groceries", amount: 150, type: "expense", category: "food", date: "2025-01-03" },
@@ -40,7 +40,7 @@ const [transactions, setTransactions] = useState([
     return Object.entries(totals).map(([name, value]) => ({ name, value }));
   }, [transactions]);
 
-  const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#0088FE", "#00C49F", "#FFBB28"];
+  const COLORS = ["#1B7A5A", "#C73A3A", "#D4A030", "#3B6EA5", "#8B5CF6", "#D97706", "#64748B"];
 
   const totalIncome = transactions
     .filter(t => t.type === "income")
@@ -50,13 +50,19 @@ const [transactions, setTransactions] = useState([
 
   const balance = totalIncome - totalExpenses;
 
-  let filteredTransactions = transactions;
-  if (filterType !== "all") {
-    filteredTransactions = filteredTransactions.filter(t => t.type === filterType);
-  }
-  if (filterCategory !== "all") {
-    filteredTransactions = filteredTransactions.filter(t => t.category === filterCategory);
-  }
+  const formatCurrency = (value) =>
+    value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+  const filteredTransactions = useMemo(() => {
+    let filtered = transactions;
+    if (filterType !== "all") {
+      filtered = filtered.filter(t => t.type === filterType);
+    }
+    if (filterCategory !== "all") {
+      filtered = filtered.filter(t => t.category === filterCategory);
+    }
+    return filtered;
+  }, [transactions, filterType, filterCategory]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -93,130 +99,170 @@ const [transactions, setTransactions] = useState([
     }
   };
 
+  const balanceStatus = balance > 0 ? "positive" : balance < 0 ? "negative" : "balanced";
 
   return (
     <div className="app">
-      <h1>Finance Tracker</h1>
-      <p className="subtitle">Track your income and expenses</p>
-
-      <div className="summary">
-        <div className="summary-card">
-          <h3>Income</h3>
-          <p className="income-amount">${totalIncome}</p>
-        </div>
-        <div className="summary-card">
-          <h3>Expenses</h3>
-          <p className="expense-amount">${totalExpenses}</p>
-        </div>
-        <div className="summary-card">
-          <h3>Balance</h3>
-          <p className="balance-amount">${balance}</p>
-        </div>
-      </div>
-
-      <div className="chart">
-        <h2>Spending by Category</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={spendingByCategory}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={100}
-              fill="#8884d8"
-              dataKey="value"
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-            >
-              {spendingByCategory.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip formatter={value => [`$${value}`]} />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="add-transaction">
-        <h2>Add Transaction</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="field-group">
-            <input
-              type="text"
-              placeholder="Description"
-              value={description}
-              onChange={(e) => { setDescription(e.target.value); setErrors(prev => ({ ...prev, description: undefined })); }}
-              className={errors.description ? "input-error" : ""}
-            />
-            {errors.description && <span className="warning">⚠ {errors.description}</span>}
+      <header className="hero">
+        <div className="hero-inner">
+          <div className="hero-top">
+            <h1 className="hero-title">Finance Tracker</h1>
+            <span className={`hero-status hero-status--${balanceStatus}`}>
+              <span className={`hero-dot hero-dot--${balanceStatus}`} />
+              {balanceStatus === "positive" && `$${formatCurrency(balance)} positive`}
+              {balanceStatus === "negative" && `$${formatCurrency(Math.abs(balance))} negative`}
+              {balanceStatus === "balanced" && "Balanced"}
+            </span>
           </div>
-          <div className="field-group">
-            <input
-              type="number"
-              placeholder="Amount"
-              value={amount}
-              onChange={(e) => { setAmount(e.target.value); setErrors(prev => ({ ...prev, amount: undefined })); }}
-              className={errors.amount ? "input-error" : ""}
-            />
-            {errors.amount && <span className="warning">⚠ {errors.amount}</span>}
+          <div className="hero-balance">
+            <span className="hero-currency">$</span>
+            <span className="hero-number">
+              {balance >= 0 ? formatCurrency(balance) : `(${formatCurrency(Math.abs(balance))})`}
+            </span>
           </div>
-          <select value={type} onChange={(e) => setType(e.target.value)}>
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
-          </select>
-          <select value={category} onChange={(e) => setCategory(e.target.value)}>
-            {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-          <button type="submit">Add</button>
-        </form>
-      </div>
+          <div className="hero-line" />
+          <div className="hero-stats">
+            <div className="hero-stat">
+              <span className="hero-stat-arrow hero-stat-arrow--up">↗</span>
+              <span className="hero-stat-value hero-stat-value--income">${formatCurrency(totalIncome)}</span>
+              <span className="hero-stat-label">Income</span>
+            </div>
+            <div className="hero-stat">
+              <span className="hero-stat-arrow hero-stat-arrow--down">↘</span>
+              <span className="hero-stat-value hero-stat-value--expense">${formatCurrency(totalExpenses)}</span>
+              <span className="hero-stat-label">Expenses</span>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <div className="transactions">
-        <h2>Transactions</h2>
-        <div className="filters">
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-            <option value="all">All Types</option>
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
-          </select>
-          <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-            <option value="all">All Categories</option>
-            {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+      <main className="content">
+        <div className="panel">
+          <section className="card chart-card">
+            <h2 className="card-title">Spending by Category</h2>
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={spendingByCategory}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={85}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {spendingByCategory.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={value => [`$${value}`]} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </section>
+
+          <section className="card form-card">
+            <h2 className="card-title">Add Transaction</h2>
+            <form onSubmit={handleSubmit}>
+              <div className="field">
+                <label className="field-label">Description</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Freelance payment"
+                  value={description}
+                  onChange={(e) => { setDescription(e.target.value); setErrors(prev => ({ ...prev, description: undefined })); }}
+                  className={errors.description ? "input-error" : ""}
+                />
+                {errors.description && <span className="field-error">{errors.description}</span>}
+              </div>
+              <div className="field">
+                <label className="field-label">Amount</label>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => { setAmount(e.target.value); setErrors(prev => ({ ...prev, amount: undefined })); }}
+                  className={errors.amount ? "input-error" : ""}
+                />
+                {errors.amount && <span className="field-error">{errors.amount}</span>}
+              </div>
+              <div className="form-row">
+                <div className="field">
+                  <label className="field-label">Type</label>
+                  <select value={type} onChange={(e) => setType(e.target.value)}>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                  </select>
+                </div>
+                <div className="field">
+                  <label className="field-label">Category</label>
+                  <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <button type="submit" className="btn">Add Transaction</button>
+            </form>
+          </section>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Description</th>
-              <th>Category</th>
-              <th>Amount</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTransactions.map(t => (
-              <tr key={t.id}>
-                <td>{t.date}</td>
-                <td>{t.description}</td>
-                <td>{t.category}</td>
-                  <td className={t.type === "income" ? "income-amount" : "expense-amount"}>
-                  {t.type === "income" ? "+" : "-"}${t.amount}
-                </td>
-                <td>
-                  <button className="delete-btn" onClick={() => handleDelete(t.id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        <section className="card table-card">
+          <div className="table-header">
+            <h2 className="card-title">Transactions</h2>
+            <div className="table-filters">
+              <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                <option value="all">All Types</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+                <option value="all">All Categories</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th className="th-amount">Amount</th>
+                  <th className="th-action">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTransactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="empty-row">No transactions match your filters.</td>
+                  </tr>
+                ) : (
+                  filteredTransactions.map(t => (
+                    <tr key={t.id}>
+                      <td className="cell-date">{t.date}</td>
+                      <td className="cell-desc">{t.description}</td>
+                      <td><span className="tag">{t.category}</span></td>
+                      <td className={`cell-amount cell-amount--${t.type}`}>
+                        <span className="cell-mono">
+                          {t.type === "income" ? "+" : "−"}{formatCurrency(t.amount)}
+                        </span>
+                      </td>
+                      <td className="cell-action">
+                        <button className="btn-delete" onClick={() => handleDelete(t.id)}>Delete</button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
